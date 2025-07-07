@@ -584,3 +584,11 @@ const miniGameBtn = document.getElementById("minigame-btn");
 miniGameBtn.addEventListener("click", () => {
   window.location.href = "game.html";
 });
+
+document.addEventListener("DOMContentLoaded", function () {
+  const avatar = document.getElementById("avatar");
+  const avatars = ["./assets/mem/asu.jpeg", "./assets/mem/asun.jpg"];
+
+  const randomIndex = Math.floor(Math.random() * avatars.length);
+  avatar.src = avatars[randomIndex];
+});
