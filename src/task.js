@@ -2,12 +2,7 @@ let isPlaying = false;
 let targetX = 0;
 let currentX = 0;
 const witchmove = document.getElementById("witch");
-const nextDateText = document.getElementById("nextdatetext");
-const witchUpload = document.getElementById("witch");
-const witchimg = witchUpload.querySelector("img");
-const todayFull = new Date();
-const today = todayFull.toISOString().split("T")[0];
-const modal = document.createElement("div");
+const witchimg = document.getElementById("witch").querySelector("img");
 const eastereggaudio = new Audio("./assets/MirrorMirror.wav");
 const easterEggButton = document.getElementById("eastereggButton");
 window.scrollTo({ top: 0, behavior: "smooth" });
@@ -17,16 +12,13 @@ easterEggButton.addEventListener("click", function () {
   if (!isPlaying) {
     isPlaying = true;
     eastereggaudio.play();
-    eastereggaudio.onended = function () {
-      isPlaying = false;
-    };
+    eastereggaudio.onended = () => (isPlaying = false);
   }
 });
 
 function animate() {
   currentX += (targetX - currentX) * 0.1;
   witchmove.style.left = `${currentX}px`;
-
   requestAnimationFrame(animate);
 }
 
@@ -52,12 +44,12 @@ function showModal({
       modal = document.createElement("div");
       modal.id = "customModal";
       modal.innerHTML = `
-          <div class="modal-content">
-            <p id="modalTitle" style="margin-bottom:20px"></p>
-            <button id="modalConfirm" style="background:#fa485b; border:none; color:#fff; padding:10px 20px; border-radius:10px; cursor:pointer; margin-right:10px"></button>
-            <button id="modalCancel" style="background:#fb91df; border:none; color:#fff; padding:10px 20px; border-radius:10px; cursor:pointer"></button>
-          </div>
-        `;
+        <div class="modal-content">
+          <p id="modalTitle" style="margin-bottom:20px"></p>
+          <button id="modalConfirm" style="background:#fb91df; border:none; color:#fff; padding:10px 20px; border-radius:10px; cursor:pointer; margin-right:10px"></button>
+          <button id="modalCancel" style="background:#fb91df; border:none; color:#fff; padding:10px 20px; border-radius:10px; cursor:pointer"></button>
+        </div>
+      `;
       document.body.appendChild(modal);
     }
 
@@ -96,70 +88,88 @@ function showModal({
 }
 
 document.addEventListener("DOMContentLoaded", () => {
-  let tasks = [];
-
-  fetch("tasks/tasks.json")
-    .then((response) => {
-      if (!response.ok) {
-        throw new Error("Fetch Error " + response.status);
-      }
-      return response.json();
-    })
-    .then((data) => {
-      tasks = data;
-    })
-    .catch((error) => {
-      console.error("Fetch Error ", error);
-    });
-
   const taskText = document.getElementById("task-text");
   const getTaskBtn = document.getElementById("get-task-btn");
   const completeTaskBtn = document.getElementById("complete-task-btn");
   const taskCounterSpan = document.getElementById("task-counter");
-  const today = new Date().toISOString().split("T")[0];
-  
+
   function updateTaskCounter() {
     const completedCount = localStorage.getItem("completedTasks") || 0;
     taskCounterSpan.innerText = completedCount;
   }
 
-  function setupDailyTask() {
-    const lastTaskDate = localStorage.getItem("lastTaskDate");
+  function setupTaskUI() {
     const currentTask = localStorage.getItem("currentTask");
     const isTaskCompleted = localStorage.getItem("isTaskCompleted") === "true";
 
     updateTaskCounter();
 
-    if (lastTaskDate === today) {
-      getTaskBtn.style.display = "none";
+    if (currentTask && !isTaskCompleted) {
       taskText.innerText = currentTask;
-
-      if (isTaskCompleted) {
-        taskText.innerHTML += "<br><em>(Today's Task Completed)</em>";
-        completeTaskBtn.style.display = "none";
-        taskText.style.opacity = 0.5;
-      } else {
-        completeTaskBtn.style.display = "inline-block";
-      }
-    } else {
-      taskText.innerText = "There is a special task for you today...";
+      getTaskBtn.style.display = "none";
+      completeTaskBtn.style.display = "inline-block";
+      cancelTaskBtn.style.display = "inline-block";
+      taskText.style.opacity = 1;
+    } else if (currentTask && isTaskCompleted) {
+      taskText.innerHTML = `${currentTask}<br><em>(Task Completed)</em>`;
       getTaskBtn.style.display = "inline-block";
       completeTaskBtn.style.display = "none";
+      cancelTaskBtn.style.display = "none";
+      taskText.style.opacity = 0.5;
+    } else {
+      taskText.innerText = "Click to receive your task...";
+      getTaskBtn.style.display = "inline-block";
+      completeTaskBtn.style.display = "none";
+      cancelTaskBtn.style.display = "none";
     }
   }
 
-  getTaskBtn.addEventListener("click", () => {
-    const task = tasks[Math.floor(Math.random() * tasks.length)];
-    localStorage.setItem("currentTask", task);
-    localStorage.setItem("lastTaskDate", today);
-    localStorage.setItem("isTaskCompleted", "false");
-    setupDailyTask();
+  getTaskBtn.addEventListener("click", async () => {
+    const currentTask = localStorage.getItem("currentTask");
+    const isTaskCompleted = localStorage.getItem("isTaskCompleted") === "true";
+    const lastTaskTime =
+      parseInt(localStorage.getItem("lastTaskTimestamp")) || 0;
+    const now = Date.now();
+
+    const oneHour = 60 * 60 * 1000;
+    const timeSinceLastTask = now - lastTaskTime;
+
+    if (currentTask && !isTaskCompleted) return;
+
+    if (lastTaskTime && timeSinceLastTask < oneHour) {
+      const minutesLeft = Math.ceil(
+        (oneHour - timeSinceLastTask) / (60 * 1000)
+      );
+      taskText.innerText = `You have now completed your task, the next task is in ${minutesLeft} minutes.`;
+      return;
+    }
+
+    getTaskBtn.disabled = true;
+    getTaskBtn.innerText = "Loading Task...";
+
+    try {
+      const task = await fetchRandomTaskWithTimestamp();
+      if (task) {
+        localStorage.setItem("currentTask", task);
+        localStorage.setItem("isTaskCompleted", "false");
+        localStorage.setItem("lastTaskTimestamp", now.toString());
+      } else {
+        taskText.innerText =
+          "The task could not be retrieved. Please try again.";
+      }
+    } catch (err) {
+      taskText.innerText = "Error";
+      console.error(err);
+    } finally {
+      setupTaskUI();
+      getTaskBtn.disabled = false;
+      getTaskBtn.innerText = "Get Task";
+    }
   });
 
   completeTaskBtn.addEventListener("click", async () => {
     const confirmed = await showModal({
-      title:
-        "Are you sure you completed the task? You will not receive any more task today.",
+      title: "Are you sure you completed the task?",
       confirmText: "Yes",
       cancelText: "Cancel",
     });
@@ -170,14 +180,58 @@ document.addEventListener("DOMContentLoaded", () => {
       completedCount++;
       localStorage.setItem("completedTasks", completedCount);
       localStorage.setItem("isTaskCompleted", "true");
-      setupDailyTask();
+      setupTaskUI();
     }
   });
 
-  setupDailyTask();
+  const cancelTaskBtn = document.getElementById("cancel-task-btn");
+  cancelTaskBtn.addEventListener("click", async () => {
+    const confirmed = await showModal({
+      title: "Do you want to cancel the current task?",
+      confirmText: "Yes",
+      cancelText: "No",
+    });
+
+    if (confirmed) {
+      localStorage.removeItem("currentTask");
+      localStorage.removeItem("isTaskCompleted");
+      localStorage.removeItem("lastTaskTimestamp");
+      setupTaskUI();
+    }
+  });
+
+  setupTaskUI();
 });
 
 const backBtn = document.getElementById("floating-back-btn");
 backBtn.addEventListener("click", () => {
   window.location.href = "index.html";
 });
+
+async function fetchRandomTaskWithTimestamp() {
+  const now = new Date();
+  const pad = (n) => String(n).padStart(2, "0");
+
+  const day = pad(now.getDate());
+  const month = pad(now.getMonth() + 1);
+  const year = now.getFullYear();
+  const hour = pad(now.getHours());
+  const minute = pad(now.getMinutes());
+  const second = pad(now.getSeconds());
+  const weekday = now.toLocaleDateString("en-US", { weekday: "long" });
+
+  const timestamp = `${day}.${month}.${year} ${hour}:${minute}:${second} ${weekday}`;
+  const baseURL =
+    "https://text.pollinations.ai/bana%20rastgele%20bir%20görev%20ver,%20sadece%20görevi%20yaz.%20Herhangi%20bir%20şey%20olabilir.%20Şu%20an%20Saat,";
+  const fullURL = `${baseURL}${encodeURIComponent(timestamp)}`;
+
+  try {
+    const response = await fetch(fullURL);
+    if (!response.ok) throw new Error(`Fetch Fail ${response.status}`);
+    const result = await response.text();
+    return result;
+  } catch (err) {
+    console.error("Fetch Error ", err);
+    return null;
+  }
+}
