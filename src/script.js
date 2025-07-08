@@ -158,16 +158,6 @@ function fadeAudio(audio, targetVolume, duration) {
   }, fadeInterval);
 }
 
-musicButton.addEventListener("click", function () {
-  if (!isMusicPlaying) {
-    document.getElementById("musicButtonImg").src =
-      "./assets/GiftBoxOpened.svg";
-    audio.play();
-    isMusicPlaying = true;
-    musicButton.style.animation = "none";
-  }
-});
-
 easterEggButton.addEventListener("click", function () {
   if (!isPlaying) {
     isPlaying = true;
@@ -183,8 +173,6 @@ easterEggButton.addEventListener("click", function () {
     };
   }
 });
-
-witchUpload.addEventListener("click", function () {});
 
 function startConfetti() {
   const script = document.createElement("script");
@@ -513,7 +501,68 @@ function setupDelete(img, blob) {
   });
 }
 
-witchUpload.addEventListener("click", function () {
+loadImagesFromDB();
+
+const taskBtn = document.getElementById("floating-task-btn");
+taskBtn.addEventListener("click", () => {
+  window.location.href = "tasks.html";
+});
+
+const miniGameBtn = document.getElementById("minigame-btn");
+miniGameBtn.addEventListener("click", () => {
+  window.location.href = "game.html";
+});
+
+const gift = document.getElementById("giftBox");
+
+gift.addEventListener("click", () => {
+  if (gift.classList.contains("open")) {
+    return;
+  }
+  if (!isMusicPlaying) {
+    audio.play();
+    isMusicPlaying = true;
+    musicButton.style.animation = "none";
+  }
+  gift.classList.add("open");
+  for (let i = 0; i < 7; i++) {
+    createNote();
+  }
+  if (!isMusicPlaying) {
+    audio.play();
+    isMusicPlaying = true;
+  }
+  setTimeout(() => {
+    gift.classList.add("landed");
+  }, 1100);
+});
+
+function createNote() {
+  const note = document.createElement("div");
+  note.className = "note";
+  note.innerText = "♪";
+  note.style.left = `40%`;
+  note.style.bottom = `50px`;
+
+  const endX = Math.random() * 200 - 100;
+  const endY = -(Math.random() * 100) - 120;
+  const rotation = Math.random() * 720 - 360;
+  const duration = Math.random() * 1.5 + 1;
+
+  note.style.setProperty("--end-x", `${endX}px`);
+  note.style.setProperty("--end-y", `${endY}px`);
+  note.style.setProperty("--rotation", `${rotation}deg`);
+  note.style.setProperty("--duration", `${duration}s`);
+
+  gift.appendChild(note);
+
+  setTimeout(() => {
+    note.remove();
+  }, duration * 1000 + 100);
+}
+
+const addImageBtn = document.getElementById("add-image-btn");
+addImageBtn.addEventListener("click", function () {
   const input = document.createElement("input");
   input.type = "file";
   input.accept = "image/*";
@@ -540,57 +589,4 @@ witchUpload.addEventListener("click", function () {
 
   document.body.appendChild(input);
   input.click();
-});
-
-loadImagesFromDB();
-
-const taskBtn = document.getElementById("floating-task-btn");
-taskBtn.addEventListener("click", () => {
-  window.location.href = "tasks.html";
-});
-
-const miniGameBtn = document.getElementById("minigame-btn");
-miniGameBtn.addEventListener("click", () => {
-  window.location.href = "game.html";
-});
-
-const qteTranslateBtn = document.getElementById("translateButton");
-let isTranslated = false;
-let clickLocked = false;
-let originalText = quoteElement.textContent.trim();
-
-qteTranslateBtn.addEventListener("click", async () => {
-  if (clickLocked) return;
-  clickLocked = true;
-
-  setTimeout(() => {
-    clickLocked = false;
-  }, 1000);
-
-  isTranslated = !isTranslated;
-
-  if (isTranslated) {
-    qteTranslateBtn.textContent = "Back to Original Quote";
-    qteTranslateBtn.style.opacity = 0.5;
-    qteTranslateBtn.style.width = "220px";
-
-    const textToTranslate = encodeURIComponent(originalText);
-    const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=tr&dt=t&q=${textToTranslate}`;
-
-    try {
-      const response = await fetch(url);
-      const data = await response.json();
-      const translatedText = data[0][0][0];
-      quoteElement.textContent = translatedText;
-    } catch (err) {
-      console.error("Translate Error ", err);
-      quoteElement.textContent = "Translate Fail";
-    }
-  } else {
-    qteTranslateBtn.textContent = "Translate";
-    qteTranslateBtn.style.opacity = 1;
-    qteTranslateBtn.style.width = "150px";
-
-    quoteElement.textContent = originalText;
-  }
 });
