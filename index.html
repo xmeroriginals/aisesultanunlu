@@ -51,14 +51,19 @@
     <title>Aişe Sultan Ünlü</title>
     <link
       rel="icon"
-      href="xmeroriginals.github.io/aisesultanunlu/assets/mem/asunovl.png"
+      href="https://xmeroriginals.github.io/aisesultanunlu/assets/mem/asunovl.png"
       type="image/png"
     />
   </head>
-  <body>
+  <body oncontextmenu="return false;">
     <div class="container">
       <div class="profile">
-        <img id="avatar" src="./assets/mem/asu.jpeg" alt="Avatar" />
+        <img
+          id="avatar"
+          src="./assets/mem/asu.jpeg"
+          alt="Avatar"
+          draggable="false"
+        />
         <img
           id="party-banner"
           src="assets/PartyProfile.png"
@@ -72,6 +77,9 @@
         <div id="loader"></div>
         <p id="quote" class="hidden"></p>
         <p id="author" class="hidden"></p>
+        <button class="qte-translate-button" id="translateButton">
+          Translate
+        </button>
       </div>
 
       <button id="musicButton" class="music-button">
@@ -156,7 +164,7 @@
         for <strong>Aişe Sultan Ünlü</strong>
       </p>
     </footer>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/3.1.9-1/crypto-js.js"></script>
     <script src="src/script.js"></script>
+    <script src="src/common.js"></script>
   </body>
 </html>
