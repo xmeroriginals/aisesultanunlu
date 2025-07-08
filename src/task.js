@@ -1,553 +1,183 @@
-body {
-  margin: 0;
-  padding: 0;
-  font-family: "Segoe UI", Tahoma, Geneva, Verdana, Arial, sans-serif;
-  background-color: #f7e0ea;
-  justify-content: center;
-  align-items: center;
-  overflow-x: hidden;
-  -webkit-tap-highlight-color: transparent;
-  user-select: none;
-  outline: none;
-}
+let isPlaying = false;
+let targetX = 0;
+let currentX = 0;
+const witchmove = document.getElementById("witch");
+const nextDateText = document.getElementById("nextdatetext");
+const witchUpload = document.getElementById("witch");
+const witchimg = witchUpload.querySelector("img");
+const todayFull = new Date();
+const today = todayFull.toISOString().split("T")[0];
+const modal = document.createElement("div");
+const eastereggaudio = new Audio("./assets/MirrorMirror.wav");
+const easterEggButton = document.getElementById("eastereggButton");
+window.scrollTo({ top: 0, behavior: "smooth" });
+document.documentElement.style.scrollBehavior = "smooth";
 
-.container {
-  text-align: center;
-  position: relative;
-  display: flex;
-  margin-top: 23dvh;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  padding: 0 1rem;
-}
-
-.profile {
-  position: relative;
-}
-
-.profile img {
-  width: 150px;
-  height: 150px;
-  border-radius: 50%;
-  object-fit: cover;
-  z-index: 1;
-  position: relative;
-}
-
-#avatar {
-  border: 4px solid rgba(255, 255, 255, 0.636);
-}
-
-#party-banner {
-  position: absolute;
-  top: -50px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 250px;
-  height: 250px;
-  display: none;
-  z-index: 2;
-}
-
-#name {
-  font-size: 1.8rem;
-  color: #444;
-  font-family: "Lexend Deca", sans-serif;
-}
-
-.music-button {
-  border: none;
-  background: transparent;
-  cursor: pointer;
-  padding: 0;
-  animation: pulse 2s infinite;
-  visibility: hidden;
-  outline: none;
-}
-
-.music-button img {
-  width: 115px;
-  height: auto;
-}
-
-@keyframes pulse {
-  0% {
-    transform: scale(1);
+easterEggButton.addEventListener("click", function () {
+  if (!isPlaying) {
+    isPlaying = true;
+    eastereggaudio.play();
+    eastereggaudio.onended = function () {
+      isPlaying = false;
+    };
   }
-  50% {
-    transform: scale(1.1);
+});
+
+function animate() {
+  currentX += (targetX - currentX) * 0.1;
+  witchmove.style.left = `${currentX}px`;
+
+  requestAnimationFrame(animate);
+}
+
+window.addEventListener("scroll", () => {
+  const scrollTop = window.scrollY;
+  const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+  const scrollPercent = scrollTop / docHeight;
+  const maxX = window.innerWidth - 200;
+  targetX = scrollPercent * maxX;
+});
+
+animate();
+
+function showModal({
+  title = "Are you sure?",
+  confirmText = "Ok",
+  cancelText = "Cancel",
+}) {
+  return new Promise((resolve) => {
+    let modal = document.getElementById("customModal");
+
+    if (!modal) {
+      modal = document.createElement("div");
+      modal.id = "customModal";
+      modal.innerHTML = `
+          <div class="modal-content">
+            <p id="modalTitle" style="margin-bottom:20px"></p>
+            <button id="modalConfirm" style="background:#fa485b; border:none; color:#fff; padding:10px 20px; border-radius:10px; cursor:pointer; margin-right:10px"></button>
+            <button id="modalCancel" style="background:#fb91df; border:none; color:#fff; padding:10px 20px; border-radius:10px; cursor:pointer"></button>
+          </div>
+        `;
+      document.body.appendChild(modal);
+    }
+
+    modal.querySelector("#modalTitle").textContent = title;
+    modal.querySelector("#modalConfirm").textContent = confirmText;
+    modal.querySelector("#modalCancel").textContent = cancelText;
+
+    modal.style.display = "block";
+    void modal.offsetWidth;
+    modal.classList.add("show");
+
+    const confirmHandler = () => close(true);
+    const cancelHandler = () => close(false);
+
+    function close(result) {
+      modal.classList.remove("show");
+      setTimeout(() => {
+        modal.style.display = "none";
+        resolve(result);
+      }, 300);
+      modal
+        .querySelector("#modalConfirm")
+        .removeEventListener("click", confirmHandler);
+      modal
+        .querySelector("#modalCancel")
+        .removeEventListener("click", cancelHandler);
+    }
+
+    modal
+      .querySelector("#modalConfirm")
+      .addEventListener("click", confirmHandler);
+    modal
+      .querySelector("#modalCancel")
+      .addEventListener("click", cancelHandler);
+  });
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  let tasks = [];
+
+  fetch("tasks/tasks.json")
+    .then((response) => {
+      if (!response.ok) {
+        throw new Error("Fetch Error " + response.status);
+      }
+      return response.json();
+    })
+    .then((data) => {
+      tasks = data;
+    })
+    .catch((error) => {
+      console.error("Fetch Error ", error);
+    });
+
+  const taskText = document.getElementById("task-text");
+  const getTaskBtn = document.getElementById("get-task-btn");
+  const completeTaskBtn = document.getElementById("complete-task-btn");
+  const taskCounterSpan = document.getElementById("task-counter");
+  const today = new Date().toISOString().split("T")[0];
+  
+  function updateTaskCounter() {
+    const completedCount = localStorage.getItem("completedTasks") || 0;
+    taskCounterSpan.innerText = completedCount;
   }
-  100% {
-    transform: scale(1);
+
+  function setupDailyTask() {
+    const lastTaskDate = localStorage.getItem("lastTaskDate");
+    const currentTask = localStorage.getItem("currentTask");
+    const isTaskCompleted = localStorage.getItem("isTaskCompleted") === "true";
+
+    updateTaskCounter();
+
+    if (lastTaskDate === today) {
+      getTaskBtn.style.display = "none";
+      taskText.innerText = currentTask;
+
+      if (isTaskCompleted) {
+        taskText.innerHTML += "<br><em>(Today's Task Completed)</em>";
+        completeTaskBtn.style.display = "none";
+        taskText.style.opacity = 0.5;
+      } else {
+        completeTaskBtn.style.display = "inline-block";
+      }
+    } else {
+      taskText.innerText = "There is a special task for you today...";
+      getTaskBtn.style.display = "inline-block";
+      completeTaskBtn.style.display = "none";
+    }
   }
-}
 
-.quote-box {
-  margin-bottom: 71px;
-  position: relative;
-}
+  getTaskBtn.addEventListener("click", () => {
+    const task = tasks[Math.floor(Math.random() * tasks.length)];
+    localStorage.setItem("currentTask", task);
+    localStorage.setItem("lastTaskDate", today);
+    localStorage.setItem("isTaskCompleted", "false");
+    setupDailyTask();
+  });
 
-#quote {
-  padding-left: 15px;
-  padding-right: 15px;
-}
+  completeTaskBtn.addEventListener("click", async () => {
+    const confirmed = await showModal({
+      title:
+        "Are you sure you completed the task? You will not receive any more task today.",
+      confirmText: "Yes",
+      cancelText: "Cancel",
+    });
 
-#loader {
-  border: 6px solid #f7e0ea;
-  border-top: 6px solid #555;
-  border-radius: 50%;
-  width: 40px;
-  height: 40px;
-  animation: spin 1s linear infinite;
-  margin: 20px auto;
-}
+    if (confirmed) {
+      let completedCount =
+        parseInt(localStorage.getItem("completedTasks")) || 0;
+      completedCount++;
+      localStorage.setItem("completedTasks", completedCount);
+      localStorage.setItem("isTaskCompleted", "true");
+      setupDailyTask();
+    }
+  });
 
-.hidden {
-  display: none;
-}
+  setupDailyTask();
+});
 
-@keyframes spin {
-  0% {
-    transform: rotate(0deg);
-  }
-  100% {
-    transform: rotate(360deg);
-  }
-}
-
-#quote,
-#author {
-  opacity: 0;
-  transform: translateY(20px);
-  transition: all 0.6s ease;
-  margin: 10px 0;
-  color: #333;
-  font-size: 1.2rem;
-  font-family: "Lexend Deca", sans-serif;
-  font-optical-sizing: auto;
-  font-weight: 250;
-  font-style: normal;
-}
-
-#author {
-  opacity: 0;
-  position: relative;
-  bottom: 9px;
-}
-
-.gallery-wrapper {
-  position: relative;
-  top: 10px;
-  overflow: hidden;
-  padding: 2rem 1rem;
-}
-
-.gallery-snap-container {
-  display: flex;
-  justify-content: center;
-}
-
-.gallery-snap {
-  display: flex;
-  overflow-x: auto;
-  scroll-snap-type: x mandatory;
-  gap: 1rem;
-  scrollbar-width: none;
-  -ms-overflow-style: none;
-}
-
-.gallery-snap::-webkit-scrollbar {
-  display: none;
-}
-
-.gallery-snap img {
-  scroll-snap-align: center;
-  width: 300px;
-  height: auto;
-  max-height: 400px;
-  object-fit: cover;
-  border-radius: 20px;
-  flex-shrink: 0;
-  transition: transform 0.3s;
-}
-
-.easter-egg {
-  position: fixed;
-  bottom: -3px;
-  right: 3px;
-  width: 115px;
-  height: 115px;
-  z-index: 99999;
-}
-
-.easter-egg img {
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-}
-
-#countdown-text {
-  text-align: center;
-  font-family: "Archivo Black", sans-serif;
-  font-size: 3rem;
-  margin-top: 100px;
-  padding-bottom: 50px;
-  color: #fda9e779;
-  z-index: 1;
-  overflow: hidden;
-  width: 100%;
-}
-
-::-webkit-scrollbar {
-  width: 8px;
-}
-
-::-webkit-scrollbar-track {
-  background: #fff;
-}
-
-::-webkit-scrollbar-thumb {
-  background: #fb91df;
-}
-
-#customModal {
-  display: none;
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-color: rgba(0, 0, 0, 0);
-  backdrop-filter: blur(0px);
-  z-index: 1000;
-
-  opacity: 0;
-  transition: opacity 0.21s cubic-bezier(0.65, 0, 0.35, 1),
-    background-color 0.21s cubic-bezier(0.65, 0, 0.35, 1),
-    backdrop-filter 0.21s cubic-bezier(0.65, 0, 0.35, 1);
-}
-
-#customModal.show {
-  display: block;
-  opacity: 1;
-  background-color: rgba(0, 0, 0, 0.5);
-  backdrop-filter: blur(5px);
-}
-
-#customModal .modal-content {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  background: white;
-  border-radius: 25px;
-  padding: 20px;
-  text-align: center;
-  color: #444;
-  max-width: 300px;
-  width: 80%;
-
-  opacity: 0;
-  transition: opacity 0.21s cubic-bezier(0.65, 0, 0.35, 1);
-}
-
-#customModal.show .modal-content {
-  opacity: 1;
-}
-
-.card-container {
-  background-color: rgba(255, 255, 255, 0.636);
-  border-radius: 20px;
-  padding: 20px;
-  margin: 30px auto;
-  font-family: "Lexend Deca", sans-serif;
-  font-optical-sizing: auto;
-  font-weight: 100;
-  max-width: 300px;
-  text-align: center;
-}
-
-.card-title {
-  margin-top: 0;
-  color: #e865a7;
-  font-family: "Questrial", sans-serif;
-  font-size: 1rem;
-  letter-spacing: 1px;
-}
-
-#task-text {
-  font-family: "Lexend Deca", sans-serif;
-  font-optical-sizing: auto;
-  font-weight: 300;
-  opacity: 0.9;
-}
-
-#daily-task-container #task-text {
-  min-height: 50px;
-  min-width: 290px;
-  color: #555;
-  font-size: 1.1rem;
-  flex-direction: column;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: color 0.3s;
-}
-
-.task-btn {
-  padding: 10px 25px;
-  font-size: 16px;
-  cursor: pointer;
-  border: none;
-  border-radius: 25px;
-  background-color: #ff89c8;
-  color: white;
-  font-weight: bold;
-  transition: background-color 0.3s, transform 0.2s;
-  margin-top: 10px;
-}
-
-.task-btn:hover {
-  background-color: #e865a7;
-  transform: scale(1.05);
-}
-
-#complete-task-btn {
-  background-color: #28a745;
-}
-#complete-task-btn:hover {
-  background-color: #218838;
-}
-
-#completed-tasks-display {
-  padding: 20px;
-  margin-bottom: 30px;
-}
-#completed-tasks-display p {
-  margin: 0;
-  font-family: "Questrial", sans-serif;
-  font-weight: bold;
-  color: #555;
-}
-#task-counter,
-#game-counter {
-  color: #e865a7;
-  font-size: 1.2em;
-}
-
-.page-footer {
-  text-align: center;
-  padding: 40px 20px;
-  color: #3333339a;
-  font-family: "Questrial", sans-serif;
-}
-
-.heart {
-  display: inline-block;
-  animation: heartbeat 1.7s infinite ease-in-out;
-  transform-origin: center;
-}
-
-@keyframes heartbeat {
-  0% {
-    transform: scale(1);
-  }
-  10% {
-    transform: scale(1.2);
-  }
-  20% {
-    transform: scale(1);
-  }
-  30% {
-    transform: scale(1.1);
-  }
-  40% {
-    transform: scale(1);
-  }
-  100% {
-    transform: scale(1);
-  }
-}
-
-#floating-task-btn,
-#floating-back-btn {
-  position: fixed;
-  top: 9px;
-  left: 10px;
-  z-index: 9999;
-  background-color: #fb91df;
-  border: none;
-  border-radius: 50%;
-  padding: 10px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  opacity: 0.7;
-  width: 41px;
-  height: 41px;
-}
-
-#floating-task-btn svg,
-#floating-back-btn svg {
-  width: 24px;
-  height: 24px;
-  fill: white;
-}
-
-#minigame-btn {
-  position: fixed;
-  top: 9px;
-  left: 61px;
-  z-index: 9999;
-  background-color: #fb91df;
-  border: none;
-  border-radius: 50%;
-  padding: 10px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  opacity: 0.7;
-  width: 41px;
-  height: 41px;
-}
-
-#minigame-btn svg {
-  width: 24px;
-  height: 24px;
-  fill: white;
-}
-
-.card:hover {
-  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
-}
-
-.btn-primary {
-  background-color: #fb91df64;
-  color: white;
-  transition: all 0.3s ease;
-  cursor: pointer;
-  width: 100%;
-  min-height: 33px;
-  border-radius: 20px;
-  padding: 10px 20px;
-  border: none;
-  user-select: none;
-  font-size: 1rem;
-  font-family: "Questrial", sans-serif;
-}
-
-.btn-primary:hover {
-  background-color: #b8589e64;
-  transform: translateY(-2px);
-}
-
-.game-container {
-  max-width: 300px;
-  margin: 30px auto;
-  border-radius: 20px;
-  padding: 20px;
-  background-color: rgba(255, 255, 255, 0.636);
-}
-
-.game-board {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 10px;
-  margin-bottom: 20px;
-}
-
-.game-card {
-  aspect-ratio: 1;
-  background-color: #fb91df64;
-  border-radius: 20px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.3s ease;
-  transform-style: preserve-3d;
-  position: relative;
-}
-
-.game-card.flipped {
-  transform: rotateY(180deg);
-}
-
-.game-card.flipped .card-back {
-  opacity: 1;
-}
-
-.game-card.flipped .card-front {
-  opacity: 0;
-}
-
-.game-card.matched {
-  background-color: #fbcded96;
-  cursor: default;
-}
-
-.card-front,
-.card-back {
-  position: absolute;
-  width: 100%;
-  height: 100%;
-  backface-visibility: hidden;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 20px;
-}
-
-.card-back {
-  background-color: #ffe7f882;
-  transform: rotateY(180deg);
-  opacity: 0;
-}
-
-.card-front {
-  opacity: 1;
-}
-
-.card-front img {
-  max-width: 25%;
-  max-height: 25%;
-}
-
-.card-back img {
-  max-width: 43%;
-  max-height: 43%;
-}
-
-.game-stats {
-  display: flex;
-  justify-content: space-between;
-  color: #e865a7;
-  align-items: center;
-  margin-bottom: 20px;
-  user-select: none;
-  font-family: "Questrial", sans-serif;
-  font-size: 1rem;
-  letter-spacing: 1px;
-}
-
-.qte-translate-button {
-  background-color: #fb91df;
-  border: none;
-  width: 150px;
-  height: 33px;
-  border-radius: 20px;
-  color: white;
-  opacity: 0.7;
-}
-
-#translateButton {
-  width: 150px;
-  transition: width 0.2s ease, opacity 0.3s ease;
-}
-
-#translateButton.expanded {
-  width: 220px;
-  opacity: 0.5;
-}
+const backBtn = document.getElementById("floating-back-btn");
+backBtn.addEventListener("click", () => {
+  window.location.href = "index.html";
+});
