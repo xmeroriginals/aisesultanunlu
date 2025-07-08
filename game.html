@@ -51,19 +51,18 @@
     <title>Aişe Sultan Ünlü</title>
     <link
       rel="icon"
-      href="xmeroriginals.github.io/aisesultanunlu/assets/mem/asunovl.png"
+      href="https://xmeroriginals.github.io/aisesultanunlu/assets/mem/asunovl.png"
       type="image/png"
     />
   </head>
-  <body>
+  <body oncontextmenu="return false;">
     <div class="container">
       <div class="profile">
-        <img id="avatar" src="./assets/mem/asu.jpeg" alt="Avatar" />
         <img
-          id="party-banner"
-          src="assets/PartyProfile.png"
+          id="avatar"
+          src="./assets/mem/asu.jpeg"
+          alt="Avatar"
           draggable="false"
-          alt="Party Banner"
         />
         <h1 id="name">Aişe Sultan Ünlü</h1>
         <p class="twond-title">Mini Game</p>
@@ -105,6 +104,25 @@
       />
     </div>
 
+    <button id="floating-back-btn" title="Back">
+      <svg
+        version="1.1"
+        xmlns="http://www.w3.org/2000/svg"
+        xmlns:xlink="http://www.w3.org/1999/xlink"
+        width="800"
+        height="800"
+        viewBox="0,0,800,800"
+      >
+        <g transform="translate(16,76)">
+          <g fill="#ffffff" stroke="none" stroke-miterlimit="10">
+            <path
+              d="M784,324c0,220.56719 -179.43281,400 -400,400c-220.56719,0 -400,-179.43281 -400,-400c0,-220.56719 179.43281,-400 400,-400c220.56719,0 400,179.43281 400,400zM617.33281,323.99844c0,-18.4 -14.93281,-33.33281 -33.33281,-33.33281h-319.53437l76.43281,-76.43281c13.03281,-13.03281 13.03281,-34.1 0,-47.13281c-13.03281,-13.03281 -34.1,-13.03281 -47.13281,0l-133.33281,133.33281c-3.06719,3.06562 -5.5,6.73281 -7.2,10.83281c-3.36719,8.13438 -3.36719,17.33438 0,25.46719c1.7,4.1 4.13281,7.76562 7.2,10.83281l133.33281,133.33281c6.5,6.5 15.03437,9.76719 23.56719,9.76719c8.53438,0 17.06719,-3.26719 23.56719,-9.76719c13.03281,-13.03281 13.03281,-34.1 0,-47.13281l-76.43281,-76.43281h319.53281c18.4,0 33.33281,-14.93438 33.33281,-33.33438z"
+            />
+          </g>
+        </g>
+      </svg>
+    </button>
+
     <footer class="page-footer">
       <p>
         Created with
@@ -113,5 +131,6 @@
       </p>
     </footer>
     <script src="src/game.js"></script>
+    <script src="src/common.js"></script>
   </body>
 </html>
