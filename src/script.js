@@ -294,7 +294,7 @@ function openDB() {
     const request = indexedDB.open("GalleryDB", 1);
 
     request.onerror = (event) => {
-      console.error("Database error:", event.target.errorCode);
+      console.error("Database Error ", event.target.errorCode);
       reject(event.target.errorCode);
     };
 
@@ -544,37 +544,6 @@ witchUpload.addEventListener("click", function () {
 
 loadImagesFromDB();
 
-const heartEl = document.querySelector(".heart");
-const hearts = [
-  "💘",
-  "💝",
-  "💖",
-  "💗",
-  "💓",
-  "💞",
-  "❣️",
-  "❤️",
-  "🩷",
-  "💛",
-  "💚",
-  "💙",
-  "🩵",
-  "💜",
-  "🤎",
-  "🖤",
-  "🩶",
-  "🤍",
-  "🫶🏻",
-];
-let index = 0;
-
-function showNextHeart() {
-  heartEl.textContent = hearts[index];
-  index = (index + 1) % hearts.length;
-}
-
-setInterval(showNextHeart, 1700);
-
 const taskBtn = document.getElementById("floating-task-btn");
 taskBtn.addEventListener("click", () => {
   window.location.href = "tasks.html";
@@ -585,10 +554,43 @@ miniGameBtn.addEventListener("click", () => {
   window.location.href = "game.html";
 });
 
-document.addEventListener("DOMContentLoaded", function () {
-  const avatar = document.getElementById("avatar");
-  const avatars = ["./assets/mem/asu.jpeg", "./assets/mem/asun.jpg"];
+const qteTranslateBtn = document.getElementById("translateButton");
+let isTranslated = false;
+let clickLocked = false;
+let originalText = quoteElement.textContent.trim();
 
-  const randomIndex = Math.floor(Math.random() * avatars.length);
-  avatar.src = avatars[randomIndex];
+qteTranslateBtn.addEventListener("click", async () => {
+  if (clickLocked) return;
+  clickLocked = true;
+
+  setTimeout(() => {
+    clickLocked = false;
+  }, 1000);
+
+  isTranslated = !isTranslated;
+
+  if (isTranslated) {
+    qteTranslateBtn.textContent = "Back to Original Quote";
+    qteTranslateBtn.style.opacity = 0.5;
+    qteTranslateBtn.style.width = "220px";
+
+    const textToTranslate = encodeURIComponent(originalText);
+    const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=tr&dt=t&q=${textToTranslate}`;
+
+    try {
+      const response = await fetch(url);
+      const data = await response.json();
+      const translatedText = data[0][0][0];
+      quoteElement.textContent = translatedText;
+    } catch (err) {
+      console.error("Translate Error ", err);
+      quoteElement.textContent = "Translate Fail";
+    }
+  } else {
+    qteTranslateBtn.textContent = "Translate";
+    qteTranslateBtn.style.opacity = 1;
+    qteTranslateBtn.style.width = "150px";
+
+    quoteElement.textContent = originalText;
+  }
 });
