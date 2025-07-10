@@ -148,7 +148,7 @@ document.addEventListener("DOMContentLoaded", () => {
     getTaskBtn.innerText = "Loading Task...";
 
     try {
-      const task = await fetchRandomTaskWithTimestamp();
+      const task = await fetchRandomTaskWithAI();
       if (task) {
         localStorage.setItem("currentTask", task);
         localStorage.setItem("isTaskCompleted", "false");
@@ -208,7 +208,7 @@ backBtn.addEventListener("click", () => {
   window.location.href = "index.html";
 });
 
-async function fetchRandomTaskWithTimestamp() {
+async function fetchRandomTaskWithAI() {
   const now = new Date();
   const pad = (n) => String(n).padStart(2, "0");
 
@@ -221,17 +221,20 @@ async function fetchRandomTaskWithTimestamp() {
   const weekday = now.toLocaleDateString("en-US", { weekday: "long" });
 
   const timestamp = `${day}.${month}.${year} ${hour}:${minute}:${second} ${weekday}`;
-  const baseURL =
-    "https://text.pollinations.ai/bana%20rastgele%20bir%20görev%20ver,%20sadece%20görevi%20yaz.%20Herhangi%20bir%20şey%20olabilir.%20Şu%20an%20Saat,";
-  const fullURL = `${baseURL}${encodeURIComponent(timestamp)}`;
+
+  const basePrompt =
+    "bana%20rastgele%20bir%20görev%20ver,%20sadece%20görevi%20yaz%20ve%20vericeğin%20görevi%20%22%7B%7D%22%20sembolleri%20içine%20al.%20Herhangi%20bir%20şey%20olabilir.%20Şu%20an%20Saat,";
+  const fullURL = `https://text.pollinations.ai/${basePrompt}${encodeURIComponent(timestamp)}`;
 
   try {
     const response = await fetch(fullURL);
     if (!response.ok) throw new Error(`Fetch Fail ${response.status}`);
-    const result = await response.text();
-    return result;
+    const text = await response.text();
+
+    const match = text.match(/{(.*?)}/);
+    return match ? match[1].trim() : null;
   } catch (err) {
-    console.error("Fetch Error ", err);
+    console.error("Fetch Error", err);
     return null;
   }
 }
